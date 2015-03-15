@@ -32,3 +32,9 @@ $ npm install --save
 ```
 $ npm start
 ```
+## Troubleshooting
+ - Ensure that the SSDP server is running on the Raspberry Pi. On a
+separate computer, run `gupnp-tools`.
+```
+$ gssdp-discover -i eth0 --timeout=3 --target=urn:schemas-upnp-org:device:RaspberryPiDevice:1
+```
