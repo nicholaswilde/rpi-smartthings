@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion>
+<major>1</major>
+<minor>0</minor>
+</specVersion>
+<device>
+<deviceType>urn:echo:device:RaspberryPiDevice:1</deviceType>
+<friendlyName>Raspberry Pi 2</friendlyName>
+<manufacturer>Raspberry Pi Foundation</manufacturer>
+<manufacturerURL>http://www.raspberrypi.org/</manufacturerURL>
+<modelDescription>A tiny and affordable computer for kids</modelDescription>
+<modelName>Model B</modelName>
+<modelNumber>XiP913</modelNumber>
+<modelURL>http://www.raspberrypi.org/</modelURL>
+<serialNumber>R1892243746-61</serialNumber>
+<UDN>uuid:482e8dac-7fad-11df-afb7-70c95922cba0</UDN>
+<UPC>123456789012</UPC>
+<serviceList>
+</serviceList>
+</device>
+</root>
