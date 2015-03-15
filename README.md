@@ -10,7 +10,7 @@ it using [RESTful commands](https://en.wikipedia.org/wiki/Representational_state
 This is a work in progress and the author does not guarantee this to
 work.
 
-## Installation Directions
+## Node.js Installation Directions
  - Install node.js
 ```
 $ wget http://node-arm.herokuapp.com/node_latest_armhf.deb
@@ -32,8 +32,11 @@ $ npm install --save
 ```
 $ npm start
 ```
+
+## SmartThings SmartApp & Device-Type installation Directions
+
 ## Troubleshooting
- - Ensure that the SSDP server is running on the Raspberry Pi. On a
+ - Ensure that the SSDP server is running on the Raspberry Pi. On a 
 separate computer, run `gupnp-tools`.
 ```
 $ gssdp-discover -i eth0 --timeout=3 --target=urn:schemas-upnp-org:device:RaspberryPiDevice:1
