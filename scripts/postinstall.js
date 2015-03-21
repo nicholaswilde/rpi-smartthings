@@ -7,7 +7,7 @@ var deviceFilePath = __dirname + '/../public/device.xml',
 // Require all npm modules
 var fs = require('fs'),
     prompt = require('prompt'),
-    parser2 = require('xmldom').DOMParser,
+    parser = require('xmldom').DOMParser,
     serializer = new (require('xmldom').XMLSerializer),
     uuid = require('node-uuid');
 
@@ -53,7 +53,7 @@ function fullParallel(callbacks, last) {
 // Read the Device.xml file for settings
 function readDevice(arg, callback) {
   fs.readFile(deviceFilePath, 'utf8', function(err, data) {
-    var doc = new parser2().parseFromString(data.substring(2, data.length)),
+    var doc = new parser().parseFromString(data.substring(2, data.length)),
         x = doc.documentElement.getElementsByTagName(arg)[0].childNodes[0];
     callback(arg, serializer.serializeToString(x));
   });
@@ -92,29 +92,30 @@ function getPrompt(results) {
       fName: {
         message: 'friendlyName',
         default: findValue(results, 'friendlyName')
-      },
-      udn: {
-        message: 'UDN',
-        default: findValue(results, 'UDN')
       }
     }
   };
-  prompt.start();
+  prompt.start();  // Start prompt
   prompt.get(schema, function (err, result) {
     if (err) { return onErr(err); }
+    results = replaceValue(results, 'friendlyName', result.fName);
     console.log('Command-line input received:');
     console.log('  friendlyName: ' + result.fName);
-    console.log('  UDN: ' + result.udn);
     writeXml(results);
   });
 }
 
 // Write XML Document
 function writeXml(results) {
-  var fileData = fs.readFileSync(deviceFilePath, 'utf8');
-  var doc = new parser2().parseFromString(fileData.substring(2, fileData.length));
-  var x = replaceNodes(doc, results);
+  var data = fs.readFileSync(deviceFilePath, 'utf8'),
+      doc = new parser().parseFromString(data.substring(2, data.length)),
+      x = replaceNodes(doc, results);
   console.log(serializer.serializeToString(x));
+}
+
+// Get random uuid
+function getUuid(arg, callback){
+  callback(arg, 'uuid:' + uuid.v4());
 }
 
 // Replace all node values
@@ -122,17 +123,17 @@ function replaceNodes(doc, results) {
   for(var i = 0; i<results.length; i++) {  
     var key = results[i][0],
         value = results[i][1],
-        newNode = doc.createElement(key); // Create a new node
+        newNode = doc.createElement(key);           // Create a new node
     newNode.appendChild(doc.createTextNode(value)); // Append the new value to the new node
-    var y = doc.getElementsByTagName(key)[0] // Get the oringinal node
-    doc.documentElement.replaceChild(newNode, y) // Replace the original node with the new
+    var y = doc.getElementsByTagName(key)[0]        // Get the oringinal node
+    doc.documentElement.replaceChild(newNode, y)    // Replace the original node with the new
   }
   return doc
 }
 
 fullParallel([
   function(next) { readDevice('friendlyName', next); },
-  function(next) { readDevice('UDN', next); },
+  function(next) { getUuid('UDN', next); },
   function(next) { readCpuinfo('Revision', next); },
   function(next) { readCpuinfo('Serial', next); },
   function(next) { readCpuinfo('modelNumber', next); }
@@ -145,9 +146,20 @@ function onErr(err) {
 }
 
 // Find value in multidimensional array
-function findValue(array, nameWeAreLookingFor) {
-  for(var i = 0; i<array.length; i++) {
-      if(array[i][0] === nameWeAreLookingFor) return array[i][1];
+function findValue(array, name) {
+  for (var i = 0; i<array.length; i++) {
+    if(array[i][0] === name) return array[i][1];
+  }
+  return -1;
+}
+
+// Replace value in array
+function replaceValue(array, name, newValue){  
+  for (var i = 0; i<array.length; i++) {
+    if(array[i][0] === name) {
+      array[i][1] = newValue;
+      return array;
+    }
   }
   return -1;
 }
