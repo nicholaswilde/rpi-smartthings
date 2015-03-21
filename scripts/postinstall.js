@@ -6,11 +6,10 @@ var deviceFilePath = __dirname + '/../public/device.xml',
 
 // Require all npm modules
 var fs = require('fs'),
-    xml2js = require('xml2js'),
-    parser = new xml2js.Parser({explicitArray : false}),
     prompt = require('prompt'),
     parser2 = require('xmldom').DOMParser,
-    serializer = new (require('xmldom').XMLSerializer);
+    serializer = new (require('xmldom').XMLSerializer),
+    uuid = require('node-uuid');
 
 // Remove Prompt colors
 prompt.colors = false;
@@ -53,11 +52,10 @@ function fullParallel(callbacks, last) {
 
 // Read the Device.xml file for settings
 function readDevice(arg, callback) {
-  fs.readFile(deviceFilePath, function(err, data) {
-    parser.parseString(data, function (err, result) {
-      if (err) { return onErr(err); }
-      callback(arg, result.root.device[arg]);
-    });
+  fs.readFile(deviceFilePath, 'utf8', function(err, data) {
+    var doc = new parser2().parseFromString(data.substring(2, data.length)),
+        x = doc.documentElement.getElementsByTagName(arg)[0].childNodes[0];
+    callback(arg, serializer.serializeToString(x));
   });
 }
 
@@ -73,8 +71,15 @@ function readCpuinfo(arg, callback) {
        result[v[0].trim()] = v[1].trim();
       }
     }
-    if (arg === 'Revision') { var v = modelLookup[result[arg]]; }
-    else { var v = result[arg]; }
+    if (arg === 'Revision') {
+      var v = modelLookup[result[arg]];
+      arg = 'modelName';
+    } else if (arg === 'Serial') {
+      var v = result[arg];
+      arg = 'serialNumber';
+    } else if (arg ==='modelNumber') {
+      var v = result['Revision'];
+    } else { var v = result[arg]; }
     callback(arg, v);
   });
 }
@@ -107,31 +112,30 @@ function getPrompt(results) {
 // Write XML Document
 function writeXml(results) {
   var fileData = fs.readFileSync(deviceFilePath, 'utf8');
-
   var doc = new parser2().parseFromString(fileData.substring(2, fileData.length));
-
-  var x = doc.documentElement;
-  newNode=doc.createElement("manufacturer");
-  newText=doc.createTextNode("A Notebook");
-
-  newNode.appendChild(newText);
-  var y = doc.getElementsByTagName('manufacturer')[0]
-  x.replaceChild(newNode, y)
-
+  var x = replaceNodes(doc, results);
   console.log(serializer.serializeToString(x));
 }
 
-// Change node value
-function changeNode(doc, node) {
-  console.log(node);
-  console.log(serializer.serializeToString(doc))
+// Replace all node values
+function replaceNodes(doc, results) {
+  for(var i = 0; i<results.length; i++) {  
+    var key = results[i][0],
+        value = results[i][1],
+        newNode = doc.createElement(key); // Create a new node
+    newNode.appendChild(doc.createTextNode(value)); // Append the new value to the new node
+    var y = doc.getElementsByTagName(key)[0] // Get the oringinal node
+    doc.documentElement.replaceChild(newNode, y) // Replace the original node with the new
+  }
+  return doc
 }
 
 fullParallel([
   function(next) { readDevice('friendlyName', next); },
   function(next) { readDevice('UDN', next); },
   function(next) { readCpuinfo('Revision', next); },
-  function(next) { readCpuinfo('Serial', next); }
+  function(next) { readCpuinfo('Serial', next); },
+  function(next) { readCpuinfo('modelNumber', next); }
 ], getPrompt);
 
 // Handle errors
